@@ -1,27 +1,55 @@
-import Vue from 'vue'
-import VueRouter, { RouteConfig } from 'vue-router'
-import Home from '../views/Home.vue'
+import Vue from 'vue';
+import VueRouter, { RouteConfig } from 'vue-router';
+import VueMeta from 'vue-meta';
+import { changeLang } from '@shared/utils/router';
+import { getCasKayttajaKieli } from '@shared/api/common';
+import * as _ from 'lodash';
+import RouteRoot from '@/views/RouteRoot.vue';
+import RouteHome from '@/views/RouteHome.vue';
+import { stores } from '@/stores';
 
-Vue.use(VueRouter)
 
-const routes: Array<RouteConfig> = [
-  {
-    path: '/',
-    name: 'Home',
-    component: Home
-  },
-  {
-    path: '/about',
-    name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
-  }
-]
+Vue.use(VueRouter);
+Vue.use(VueMeta, {
+  refreshOnceOnNavigation: true,
+});
+
+const props = (route: any) => {
+  return {
+    ...route.params,
+    ...stores,
+  };
+};
 
 const router = new VueRouter({
-  routes
-})
+  routes: [{
+    path: '',
+  }, {
+    path: '/',
+  }, {
+    path: '/:lang',
+    component: RouteRoot,
+    props,
+    children: [{
+      path: '',
+      name: 'root',
+      component: RouteHome,
+      props,
+    }],
+  }],
+});
 
-export default router
+router.beforeEach(async (to, from, next) => {
+  if (!_.get(to.params, 'lang')) {
+    router.push({ path: '/' + await getCasKayttajaKieli() });
+  }
+
+  next();
+});
+
+router.beforeEach((to, from, next) => {
+  changeLang(to, from);
+  next();
+});
+
+export default router;

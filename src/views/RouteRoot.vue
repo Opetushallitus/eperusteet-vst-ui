@@ -1,0 +1,150 @@
+<template>
+  <div class="home-container minfull">
+    <div class="header" ref="header" :style="headerStyle">
+      <EpNavbar :kayttaja="kayttaja" />
+      <PortalTarget ref="innerPortal" name="headerExtension" />
+    </div>
+    <RouterView />
+    <ep-footer />
+  </div>
+</template>
+
+<script lang="ts">
+import _ from 'lodash';
+import { Prop, Watch, Component, Vue } from 'vue-property-decorator';
+import Sticky from 'vue-sticky-directive';
+import EpNavbar from '@shared/components/EpNavbar/EpNavbar.vue';
+import EpFooter from '@shared/components/EpFooter/EpFooter.vue';
+import { BrowserStore } from '@shared/stores/BrowserStore';
+import { Meta } from '@shared/utils/decorators';
+import { koulutustyyppiBanner } from '@shared/utils/bannerIcons';
+
+@Component({
+  components: {
+    EpNavbar,
+    EpFooter,
+  },
+  directives: {
+    Sticky,
+  },
+})
+export default class RouteRoot extends Vue {
+  @Prop({ required: true })
+  private browserStore!: BrowserStore;
+
+  private isSticky = false;
+  private height = null as number | null;
+
+  get kayttaja() {
+    return null;
+  }
+
+  @Meta
+  getMetaInfo() {
+    const lang = _.get(this.$route, 'params.lang');
+    const hasRouteName = this.$route && this.$route.name;
+    return {
+      title: hasRouteName ? this.$t('route-' + this.$route.name) : this.$t('eperusteet'),
+      titleTemplate: hasRouteName ? '%s - ' + this.$t('eperusteet') : null,
+      htmlAttrs: {
+        lang: lang || 'fi',
+      },
+      meta: [
+        {
+          vmid: 'description',
+          name: 'description',
+          content: this.$t('tervetuloa-kuvaus-vst'),
+        },
+        {
+          vmid: 'keywords',
+          name: 'keywords',
+          content: this.$t('avainsanalista'),
+        },
+        {
+          vmid: 'author',
+          name: 'author',
+          content: this.$t('opetushallitus'),
+        },
+        {
+          vmid: 'og:site_name',
+          property: 'og:site_name',
+          content: this.$t('eperusteet-vst'),
+        },
+        {
+          vmid: 'og:description',
+          property: 'og:description',
+          content: this.$t('tervetuloa-kuvaus-vst'),
+        },
+        {
+          vmid: 'og:locale',
+          property: 'og:locale',
+          content: lang + '_FI',
+        },
+      ],
+    };
+  }
+
+  get portalStyle() {
+    if (this.height === null) {
+      return {};
+    }
+    else if (this.isSticky) {
+      return {
+        'max-height': 0 + 'px',
+      };
+    }
+    else {
+      return {
+        'max-height': this.height + 'px',
+      };
+    }
+  }
+
+  get scrollY() {
+    return this.browserStore.scrollY.value;
+  }
+
+  @Watch('scrollY', { immediate: true })
+  onScroll(newVal, oldVal) {
+    const threshold = 0.5;
+    if ((newVal < threshold && oldVal < threshold)
+      || (newVal >= threshold && oldVal >= threshold)) {
+
+    }
+    else {
+      this.isSticky = newVal >= threshold;
+      if (this.$refs.innerPortal) {
+        setTimeout(() => {
+          this.height = (this.$refs.innerPortal as any).$el.clientHeight;
+        }, 100);
+      }
+    }
+  }
+
+  get headerStyle() {
+    return koulutustyyppiBanner('koulutustyyppi_30');
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+@import '@/styles/_variables.scss';
+
+.home-container {
+  .header {
+    color: white;
+    // background-image: url('@shared/banners/image/header.svg');
+    background-position: 100% 0;
+    background-repeat: none;
+    background-size: cover;
+    @media only screen and (min-width: 2503px)  {
+    }
+    /* background-size: 100%; */
+  }
+}
+
+// .animate {
+//   transition: max-height 0.2s ease-in-out;
+// }
+
+</style>

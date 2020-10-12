@@ -1,32 +1,50 @@
 <template>
-  <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
-  </div>
+<div v-if="!state.isInitializing" class="minfull h-100">
+  <router-view />
+  <notifications style="margin-right: 6px; margin-top: 90px;"
+                 position="top right"
+                 :max="3" />
+</div>
 </template>
 
+<script lang="ts">
+import { delay } from '@shared/utils/delay';
+import { defineComponent, onMounted, reactive } from '@vue/composition-api';
+
+export default defineComponent({
+  name: 'App',
+
+  setup(props, { root }) {
+    const state = reactive({
+      isInitializing: true,
+    });
+
+    onMounted(async () => {
+      const loader = root.$loading.show({
+        color: '#2E5FD1',
+      });
+      // await Kayttajat.init();
+      state.isInitializing = false;
+      await delay(500);
+      loader.hide();
+    });
+
+    return {
+      state,
+    };
+  },
+});
+
+</script>
+
 <style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+@import 'vue-select/src/scss/vue-select.scss';
+
+.minfull {
+  min-height: 100vh;
 }
 
-#nav {
-  padding: 30px;
-
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
-    }
-  }
+body, html {
+  height: 100%;
 }
 </style>
